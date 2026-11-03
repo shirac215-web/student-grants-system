@@ -13,21 +13,9 @@ export default function ScholarshipStatus() {
 useEffect(() => {
   const fetchStatus = async () => {
     try {
-      // 1. נמצא את המפתח הנכון ב-localStorage
-      let currentUserId = null;
-      
-      // נחפש את כל המפתחות ב-localStorage
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        const value = localStorage.getItem(key);
-        
-        // נבדוק אם זה המפתח שמכיל את ה-ID (האובייקט שראינו בצילום מסך)
-        if (value.includes("6a0cc9")) {
-           const parsed = JSON.parse(value);
-           currentUserId = parsed.id;
-           break;
-        }
-      }
+      // 1. שליפת המשתמש המחובר מה-localStorage (נשמר בזמן ההתחברות)
+      const storedUser = localStorage.getItem("scholarshipAppUser");
+      const currentUserId = storedUser ? JSON.parse(storedUser).id : null;
 
       if (!currentUserId) {
         throw new Error("לא נמצא מזהה משתמש מחובר.");
@@ -36,7 +24,7 @@ useEffect(() => {
       console.log("Found User ID:", currentUserId);
 
       // 2. הפנייה לשרת עם ה-ID שמצאנו
-      const response = await fetch(`http://localhost:5000/api/requests/user/${currentUserId}`);
+      const response = await fetch(`/api/requests/user/${currentUserId}`);
 
       if (!response.ok) {
         throw new Error("לא נמצאה בקשה עבור משתמש זה.");
@@ -265,4 +253,3 @@ useEffect(() => {
     </div>
   );
 }
-
