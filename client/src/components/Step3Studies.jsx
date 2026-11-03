@@ -23,7 +23,7 @@ export default function Step3Studies({
     if (requestId) {
       try {
         await fetch(
-          `http://localhost:5000/api/requests/${requestId}/education`,
+          `/api/requests/${requestId}/education`,
           {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },

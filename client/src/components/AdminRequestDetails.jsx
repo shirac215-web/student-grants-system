@@ -10,7 +10,7 @@ export default function AdminRequestDetails() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch(`http://localhost:5000/api/requests/${id}`)
+    fetch(`/api/requests/${id}`)
       .then(res => {
         if (!res.ok) throw new Error('שגיאה בטעינת הבקשה');
         return res.json();
@@ -32,7 +32,7 @@ export default function AdminRequestDetails() {
       cancelButtonText: 'ביטול',
     });
     if (!confirm.isConfirmed) return;
-    await fetch(`http://localhost:5000/api/requests/${id}/status`, {
+    await fetch(`/api/requests/${id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
