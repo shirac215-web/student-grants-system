@@ -4,4 +4,10 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  server: {
+    // בפיתוח מקומי: כל בקשה ל-/api עוברת לשרת ה-Node בפורט 5000
+    proxy: {
+      '/api': 'http://localhost:5000',
+    },
+  },
 })
