@@ -5,7 +5,7 @@ import { useSearchParams } from 'react-router-dom';
 import FromStepTwo from './FromStepTwo'; 
 import FromStepFour from './FromStepFour'; // שלב 4 של פרטי הבנק
 import Step3Studies from './Step3Studies';
-import { FormStep5 } from './FormStep5';
+import { FormStep5 } from './formStep5';
 import SubmitRequestStep from './step6-confirm';
 
 export default function HeaderSteps() {
