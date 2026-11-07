@@ -55,7 +55,7 @@ useEffect(() => {
     switch (status) {
       case "approved":
         return {
-          text: "אושר",
+          text: "אושרה",
           icon: "✅",
           color: "#1b5e20",
           bg: "rgba(76, 175, 80, 0.15)",
