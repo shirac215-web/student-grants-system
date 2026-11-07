@@ -2,21 +2,23 @@ const express = require('express');
 const router = express.Router();
 const { create, read, readOne, update, updateStatus, updateEducation, remove, getRequestStatus, submitRequest } = require('../controllers/requestController');
 const auth = require('../middleware/auth');
+const requireAdmin = require('../middleware/requireAdmin');
 
-// Student: submit the full form (identity comes from the JWT)
+// ─── Student ─────────────────────────────────────────────────────────────────
+// Submit the full form (identity comes from the JWT)
 router.post('/submit', auth, submitRequest);
-
-// Student: status of their latest request (used by the status page)
+// Status of the student's latest request (used by the status page)
 router.get('/user/:userId', getRequestStatus);
 
-// Management routes: require a logged-in user, so request data
-// (ID numbers, bank details) is never publicly readable
-router.post('/', auth, create);
-router.get('/', auth, read);
-router.get('/:id', auth, readOne);
-router.put('/:id', auth, update);
-router.patch('/:id/status', auth, updateStatus);
-router.patch('/:id/education', auth, updateEducation);
-router.delete('/:id', auth, remove);
+// ─── Admin only ──────────────────────────────────────────────────────────────
+// Request data includes ID numbers and bank details, so only a logged-in
+// admin can list, view, approve/reject, edit or delete requests
+router.get('/', auth, requireAdmin, read);
+router.get('/:id', auth, requireAdmin, readOne);
+router.patch('/:id/status', auth, requireAdmin, updateStatus);
+router.post('/', auth, requireAdmin, create);
+router.put('/:id', auth, requireAdmin, update);
+router.patch('/:id/education', auth, requireAdmin, updateEducation);
+router.delete('/:id', auth, requireAdmin, remove);
 
 module.exports = router;
