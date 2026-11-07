@@ -3,38 +3,31 @@ import { useForm } from 'react-hook-form';
 export default function Step3Studies({
   nextStep,
   prevStep,
-  currentStep,
-  requestId,
+  formData = {},
+  setFormData,
 }) {
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm();
+  } = useForm({
+    defaultValues: {
+      field: formData.field || '',
+      institution: formData.institution || '',
+      years: formData.years || '',
+      tuition: formData.tuition || '',
+    },
+  });
 
-  const onValidSubmit = async (data) => {
-    const education = {
+  // שומרים את פרטי הלימודים בטופס המשותף. השליחה לשרת מתבצעת בשלב 6
+  const onValidSubmit = (data) => {
+    setFormData((prev) => ({
+      ...prev,
       field: data.field,
       institution: data.institution,
       years: Number(data.years),
       tuition: Number(data.tuition),
-    };
-
-    if (requestId) {
-      try {
-        await fetch(
-          `/api/requests/${requestId}/education`,
-          {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ education }),
-          }
-        );
-      } catch (error) {
-        console.error('Failed to update education:', error);
-      }
-    }
-
+    }));
     nextStep();
   };
 
@@ -100,7 +93,6 @@ export default function Step3Studies({
                 </label>
 
                 <select
-                  defaultValue=""
                   className={`w-full bg-white border rounded-lg px-4 py-3 focus:outline-none transition text-sm text-[#071325] appearance-none ${
                     errors.field
                       ? 'border-red-500 focus:border-red-500'

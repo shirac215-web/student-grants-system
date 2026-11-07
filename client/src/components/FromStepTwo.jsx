@@ -24,15 +24,17 @@ export default function FromStepTwo({ nextStep, prevStep, formData, setFormData,
       fatherId: formData.fatherId || "",
       fatherLastName: formData.fatherLastName || "",
       fatherFirstName: formData.fatherFirstName || "",
+      motherId: formData.motherId || "",
+      motherLastName: formData.motherLastName || "",
+      motherFirstName: formData.motherFirstName || "",
       siblingsUnder18: formData.siblingsUnder18 || "",
       siblingsOver21: formData.siblingsOver21 || "",
-      siblings: formData.siblings && formData.siblings.length > 0 
-        ? formData.siblings 
-        : [{ idNumber: "", birthDate: "", lastName: "", firstName: "" }]
+      // אחים הם לא חובה: מתחילים מרשימה ריקה ומוסיפים לפי הצורך
+      siblings: formData.siblings || []
     }
   });
 
-  const { fields, append } = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     control,
     name: "siblings"
   });
@@ -110,6 +112,48 @@ export default function FromStepTwo({ nextStep, prevStep, formData, setFormData,
             </div>
           </div>
 
+          {/* חלק 1ב: פרטי האם */}
+          <div>
+            <h3 className="text-[#071325] text-sm font-medium mb-4 pb-2 border-b border-[#d5c9b5]">פרטי האם</h3>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm text-[#071325] mb-2">מספר זהות <span className="text-red-500">*</span></label>
+                <input 
+                  type="text" 
+                  placeholder="הזן מספר זהות" 
+                  className={`w-full bg-white border rounded-lg px-4 py-3 focus:outline-none transition text-sm text-[#071325] placeholder-[#071325]/50 ${errors.motherId ? 'border-red-500 focus:border-red-500' : 'border-[#d5c9b5] focus:border-[#071325]'}`}
+                  {...register("motherId", { 
+                    required: "שדה חובה",
+                    pattern: { value: /^[0-9]{9}$/, message: "מספר זהות חייב להכיל בדיוק 9 ספרות" }
+                  })}
+                />
+                {errors.motherId && <p className="text-red-500 text-xs mt-1">{errors.motherId.message}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm text-[#071325] mb-2">שם משפחה <span className="text-red-500">*</span></label>
+                <input 
+                  type="text" 
+                  placeholder="הזן שם משפחה" 
+                  className={`w-full bg-white border rounded-lg px-4 py-3 focus:outline-none transition text-sm text-[#071325] placeholder-[#071325]/50 ${errors.motherLastName ? 'border-red-500 focus:border-red-500' : 'border-[#d5c9b5] focus:border-[#071325]'}`}
+                  {...register("motherLastName", { required: "יש להזין שם משפחה" })}
+                />
+                {errors.motherLastName && <p className="text-red-500 text-xs mt-1">{errors.motherLastName.message}</p>}
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm text-[#071325] mb-2">שם פרטי <span className="text-red-500">*</span></label>
+                <input 
+                  type="text" 
+                  placeholder="הזן שם פרטי" 
+                  className={`w-full bg-white border rounded-lg px-4 py-3 focus:outline-none transition text-sm text-[#071325] placeholder-[#071325]/50 ${errors.motherFirstName ? 'border-red-500 focus:border-red-500' : 'border-[#d5c9b5] focus:border-[#071325]'}`}
+                  {...register("motherFirstName", { required: "יש להזין שם פרטי" })}
+                />
+                {errors.motherFirstName && <p className="text-red-500 text-xs mt-1">{errors.motherFirstName.message}</p>}
+              </div>
+            </div>
+          </div>
+
           {/* חלק 2: פרטי אחים ואחיות */}
           <div>
             <h3 className="text-[#071325] text-sm font-medium mb-4 pb-2 border-b border-[#d5c9b5]">פרטי אחים</h3>
@@ -143,6 +187,13 @@ export default function FromStepTwo({ nextStep, prevStep, formData, setFormData,
                 <div key={item.id} className="p-6 border border-[#d5c9b5] rounded-xl bg-gray-50/30">
                   <div className="flex justify-between items-center mb-4">
                     <h4 className="text-[#071325] font-bold text-sm">אח / אחות #{index + 1}</h4>
+                    <button
+                      type="button"
+                      onClick={() => remove(index)}
+                      className="text-red-500 text-xs font-medium hover:underline"
+                    >
+                      הסר
+                    </button>
                   </div>
                   <div className="grid md:grid-cols-2 gap-6">
                     <div>

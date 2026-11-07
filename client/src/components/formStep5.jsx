@@ -7,13 +7,39 @@ export const FormStep5 = ({
   setFormData,
   saveDraft,
 }) => {
+  // אם המשתמש חזר לשלב הזה, מציגים את שמות הקבצים שכבר בחר
+  const saved = formData.fileNames || {};
+  const initial = (key) => (saved[key] ? { name: saved[key] } : null);
+
   const [files, setFiles] = useState({
-    studentId: null,
-    fatherId: null,
-    motherId: null,
-    studyProof: null,
-    bankProof: null,
+    studentId: initial("studentId"),
+    fatherId: initial("fatherId"),
+    motherId: initial("motherId"),
+    studyProof: initial("studyProof"),
+    bankProof: initial("bankProof"),
   });
+
+  const labels = {
+    studentId: "צילום ת.ז סטודנט",
+    fatherId: "צילום ת.ז אב",
+    motherId: "צילום ת.ז אם",
+    studyProof: "אישור לימודים",
+    bankProof: "אישור ניהול חשבון",
+  };
+
+  // מעבר לשלב הבא: כל 5 המסמכים הם חובה
+  const handleNext = () => {
+    const missing = Object.keys(files).filter((key) => !files[key]);
+    if (missing.length > 0) {
+      alert("יש להעלות את כל המסמכים:\n" + missing.map((key) => labels[key]).join("\n"));
+      return;
+    }
+    const fileNames = Object.fromEntries(
+      Object.entries(files).map(([key, file]) => [key, file.name])
+    );
+    setFormData((prev) => ({ ...prev, fileNames }));
+    nextStep();
+  };
 
   const refs = {
     studentId: useRef(null),
@@ -301,7 +327,7 @@ export const FormStep5 = ({
           </button>
 
           <button
-            onClick={nextStep}
+            onClick={handleNext}
             type="button"
             className="flex items-center gap-2 px-8 py-2.5 bg-[#071325] text-white font-medium rounded-xl hover:bg-[#071325]/80 shadow-lg shadow-[#071325]/20 transition-all duration-200 cursor-pointer"
           >

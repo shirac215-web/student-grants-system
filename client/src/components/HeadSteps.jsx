@@ -1,58 +1,129 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 
-// ייבוא הקומפוננטות המוכנות בלבד
-import FromStepTwo from './FromStepTwo'; 
-import FromStepFour from './FromStepFour'; // שלב 4 של פרטי הבנק
+// ייבוא קומפוננטות השלבים
+import Step1Personal from './Step1Personal';
+import FromStepTwo from './FromStepTwo';
 import Step3Studies from './Step3Studies';
+import FromStepFour from './FromStepFour'; // שלב 4 של פרטי הבנק
 import { FormStep5 } from './formStep5';
 import SubmitRequestStep from './step6-confirm';
 
+// ממיר את הנתונים השטוחים של הטופס למבנה שהשרת (requestModel) מצפה לו
+const buildRequestPayload = (data) => ({
+  personal: {
+    birthDate: data.birthDate,
+    city: data.city,
+    address: data.address,
+    phone: data.phone,
+    mobile: data.mobile,
+  },
+  family: {
+    father: { id: data.fatherId, firstName: data.fatherFirstName, lastName: data.fatherLastName },
+    mother: { id: data.motherId, firstName: data.motherFirstName, lastName: data.motherLastName },
+    siblings: (data.siblings || []).map((s) => ({
+      id: s.idNumber,
+      firstName: s.firstName,
+      lastName: s.lastName,
+      birthDate: s.birthDate || null,
+    })),
+  },
+  education: {
+    institution: data.institution,
+    field: data.field,
+    years: Number(data.years),
+    tuition: Number(data.tuition),
+  },
+  bank: {
+    bankName: data.bankName,
+    branch: data.branchNumber,
+    accountNumber: data.accountNumber,
+    ownerId: data.accountHolderId,
+  },
+  // כרגע נשמרים שמות הקבצים בלבד (ראו README)
+  files: {
+    studentId: data.fileNames?.studentId,
+    fatherId: data.fileNames?.fatherId,
+    motherId: data.fileNames?.motherId,
+    studyApproval: data.fileNames?.studyProof,
+    bankApproval: data.fileNames?.bankProof,
+  },
+});
+
+const readUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem('scholarshipAppUser')) || {};
+  } catch {
+    return {};
+  }
+};
+
 export default function HeaderSteps() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const currentStep = Number(searchParams.get('step')) || 1;
-  const [requestId, setRequestId] = useState(null);
 
-  // הגדרת מפתח ייחודי לטיוטה עבור כל משתמש
-  const userName = localStorage.getItem('userFirstName') || 'guest';
-  const draftKey = `draft_${userName}`;
+  // המשתמש המחובר, וטיוטה נפרדת לכל משתמש
+  const user = readUser();
+  const draftKey = `draft_${user.id || 'guest'}`;
 
-  // ה-State המרכזי שומר את כל נתוני הטופס ביחד
-  const [formData, setFormData] = useState({
-    // שדות שלב 4 (פרטי בנק)
-    accountHolderId: '',
-    bankName: '',
-    branchNumber: '',
-    accountNumber: '',
-    // ניתן להוסיף כאן עוד שדות לשאר השלבים...
+  // ה-State המרכזי שומר את כל נתוני הטופס מכל השלבים ביחד.
+  // בטעינה הראשונה הוא מתחיל מהטיוטה השמורה של המשתמש, אם יש כזו
+  const [formData, setFormData] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(draftKey)) || {};
+    } catch {
+      return {};
+    }
   });
 
-  // טעינת הטיוטה האישית כשהאפליקציה עולה
-  useEffect(() => {
-    const savedPersonalDraft = localStorage.getItem(draftKey);
-    if (savedPersonalDraft) {
-      setFormData(JSON.parse(savedPersonalDraft));
-    }
-  }, [draftKey]); // ירוץ שוב רק אם המשתמש התחלף
-
-  // פונקציה גלובלית לשמירת הטיוטה (שומרת תחת השם האישי)
+  // שמירת טיוטה (ממזגת את הנתונים של השלב הנוכחי עם כל השאר)
   const handleSaveDraft = (childData = {}) => {
-    const dataToSave = { ...formData, ...childData }; // ממזג את המידע מהאבא עם המידע מהילד
+    const dataToSave = { ...formData, ...childData };
     setFormData(dataToSave);
-    
-    // שומרים ב-localStorage תחת המפתח האישי של המשתמש
-    localStorage.setItem(draftKey, JSON.stringify(dataToSave)); 
-    
-    alert('כל הנתונים נשמרו כטיוטה בהצלחה!');
+    localStorage.setItem(draftKey, JSON.stringify(dataToSave));
+    Swal.fire({ icon: 'success', title: 'הטיוטה נשמרה', timer: 1500, showConfirmButton: false });
   };
 
-  // פונקציית עדכון השדות הגלובלית
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+  // שליחת הבקשה המלאה לשרת (שלב 6)
+  const handleFinalSubmit = async () => {
+    const token = localStorage.getItem('scholarshipAppToken');
+
+    try {
+      const response = await fetch('/api/requests/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(buildRequestPayload(formData)),
+      });
+
+      const result = await response.json().catch(() => ({}));
+
+      if (response.status === 401) {
+        await Swal.fire({ icon: 'warning', title: 'יש להתחבר מחדש', text: result.message, confirmButtonColor: '#071325' });
+        navigate('/login');
+        return;
+      }
+
+      if (!response.ok) {
+        Swal.fire({ icon: 'error', title: 'שליחת הבקשה נכשלה', text: result.message || 'נסו שוב מאוחר יותר', confirmButtonColor: '#071325' });
+        return;
+      }
+
+      localStorage.removeItem(draftKey);
+      await Swal.fire({ icon: 'success', title: 'הבקשה נשלחה בהצלחה!', text: 'אפשר לעקוב אחרי הסטטוס שלה בכל זמן', confirmButtonColor: '#071325' });
+      navigate('/request-status');
+    } catch (error) {
+      Swal.fire({ icon: 'error', title: 'אין חיבור לשרת', text: 'בדקו את החיבור לאינטרנט ונסו שוב', confirmButtonColor: '#071325' });
+    }
+  };
+
+  const handleCancel = () => {
+    localStorage.removeItem(draftKey);
+    navigate('/dashboard');
   };
 
   // פונקציות ניווט
@@ -65,57 +136,38 @@ export default function HeaderSteps() {
 
   const steps = ['פרטים אישיים', 'פרטי משפחה', 'פרטי לימודים', 'פרטי בנק', 'העלאת קבצים', 'אישור ושליחה'];
 
+  const stepProps = {
+    nextStep: goToNextStep,
+    prevStep: goToPrevStep,
+    currentStep,
+    formData,
+    setFormData,
+    saveDraft: handleSaveDraft,
+  };
+
+  // key={currentStep} גורם לכל שלב להיטען מחדש עם הנתונים העדכניים
   const renderCurrentStep = () => {
     switch (currentStep) {
       case 1:
-        return (
-          <div className="bg-white border border-[#e2dfd8] rounded-2xl p-8 text-center shadow-sm">
-            <h2 className="text-xl font-bold text-[#071325] mb-2">שלב 1: פרטים אישיים</h2>
-            <p className="text-gray-500 mb-6">הקומפוננטה הזו עדיין בבנייה...</p>
-            <div className="flex justify-center gap-4">
-              <button onClick={() => handleSaveDraft()} className="px-6 py-2 border border-[#d5c9b5] text-[#071325] rounded-lg">שמור טיוטה</button>
-              <button onClick={goToNextStep} className="px-6 py-2 bg-[#071325] text-white rounded-lg font-bold">דילוג לשלב הבא</button>
-            </div>
-          </div>
-        );
-
+        return <Step1Personal key={1} {...stepProps} />;
       case 2:
-        return <FromStepTwo nextStep={goToNextStep} prevStep={goToPrevStep} formData={formData} setFormData={setFormData} currentStep={currentStep} saveDraft={handleSaveDraft} />;
-
+        return <FromStepTwo key={2} {...stepProps} />;
       case 3:
-        return (
-          <Step3Studies
-            nextStep={goToNextStep}
-            prevStep={goToPrevStep}
-            currentStep={currentStep}
-            requestId={requestId}
-          />
-        );
-
+        return <Step3Studies key={3} {...stepProps} />;
       case 4:
-        return <FromStepFour formData={formData} handleChange={handleChange} nextStep={goToNextStep} prevStep={goToPrevStep} saveDraft={handleSaveDraft} />;
-
+        return <FromStepFour key={4} {...stepProps} />;
       case 5:
-        return (
-          <FormStep5
-            nextStep={goToNextStep}
-            prevStep={goToPrevStep}
-            currentStep={currentStep}
-            formData={formData}
-            setFormData={setFormData}
-            saveDraft={handleSaveDraft}
-          />
-        );
-
+        return <FormStep5 key={5} {...stepProps} />;
       case 6:
         return (
-      <SubmitRequestStep
-      prevStep={goToPrevStep}
-      currentStep={currentStep}
-      saveDraft={handleSaveDraft}
-       />
+          <SubmitRequestStep
+            formData={formData}
+            user={user}
+            prevStep={goToPrevStep}
+            onSubmit={handleFinalSubmit}
+            onCancel={handleCancel}
+          />
         );
-
       default:
         return <div>שגיאה בטעינת השלב</div>;
     }

@@ -4,7 +4,16 @@ import React, { useState } from 'react';
 // formData  – the full accumulated form state from all previous steps
 // prevStep  – navigates back to step 5
 // onSubmit  – async function in HeaderSteps that POST-s to the server
-export default function SubmitRequestStep({ formData = {}, prevStep, onSubmit }) {
+// onCancel  – clears the draft and returns to the dashboard
+// user      – the logged-in student (name comes from the account)
+const FIELD_LABELS = {
+  'Computer Science': 'מדעי המחשב',
+  Engineering: 'הנדסת תוכנה',
+  Math: 'מתמטיקה',
+  Other: 'אחר',
+};
+
+export default function SubmitRequestStep({ formData = {}, prevStep, onSubmit, onCancel, user = {} }) {
   const [confirmed, setConfirmed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -14,14 +23,16 @@ export default function SubmitRequestStep({ formData = {}, prevStep, onSubmit })
       return;
     }
     setIsSubmitting(true);
-    await onSubmit();          // calls handleFinalSubmit in HeaderSteps
-    setIsSubmitting(false);
+    try {
+      await onSubmit();        // calls handleFinalSubmit in HeaderSteps
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCancel = () => {
     if (window.confirm('האם אתה בטוח שברצונך לבטל את הבקשה?')) {
-      localStorage.removeItem('globalFormDraft');
-      window.location.href = '/dashboard';
+      onCancel();
     }
   };
 
@@ -47,10 +58,10 @@ export default function SubmitRequestStep({ formData = {}, prevStep, onSubmit })
         <div className="summary-section mb-7">
           <div className="text-[14px] font-semibold text-[#0c1e36]/50 uppercase tracking-[0.5px] mb-3.5">פרטים אישיים</div>
           <div className="grid grid-cols-2 gap-3">
-            <SummaryItem label="שם מלא" value={`${formData.firstName ?? ''} ${formData.lastName ?? ''}`.trim() || '—'} />
-            <SummaryItem label="מספר זהות" value={formData.idNumber || '—'} />
-            <SummaryItem label="עיר מגורים" value={formData.city || '—'} />
-            <SummaryItem label="טלפון נייד" value={formData.phone || '—'} />
+            <SummaryItem label="שם מלא" value={`${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() || '—'} />
+            <SummaryItem label="תאריך לידה" value={formData.birthDate ? new Date(formData.birthDate).toLocaleDateString('he-IL') : '—'} />
+            <SummaryItem label="כתובת" value={[formData.address, formData.city].filter(Boolean).join(', ') || '—'} />
+            <SummaryItem label="טלפון נייד" value={formData.mobile || '—'} />
           </div>
         </div>
 
@@ -60,10 +71,10 @@ export default function SubmitRequestStep({ formData = {}, prevStep, onSubmit })
         <div className="summary-section mb-7">
           <div className="text-[14px] font-semibold text-[#0c1e36]/50 uppercase tracking-[0.5px] mb-3.5">פרטי לימודים</div>
           <div className="grid grid-cols-2 gap-3">
-            <SummaryItem label="מגמה" value={formData.fieldOfStudy || '—'} />
+            <SummaryItem label="מגמה" value={FIELD_LABELS[formData.field] || '—'} />
             <SummaryItem label="מוסד לימודים" value={formData.institution || '—'} />
-            <SummaryItem label="שנות לימוד" value={formData.studyYears || '—'} />
-            <SummaryItem label="שכר לימוד שנתי" value={formData.tuitionFee ? `₪${formData.tuitionFee}` : '—'} />
+            <SummaryItem label="שנות לימוד" value={formData.years || '—'} />
+            <SummaryItem label="שכר לימוד שנתי" value={formData.tuition ? `₪${Number(formData.tuition).toLocaleString('he-IL')}` : '—'} />
           </div>
         </div>
 
