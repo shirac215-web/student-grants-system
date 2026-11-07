@@ -2,6 +2,18 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 
+const FIELD_LABELS = {
+  'Computer Science': 'מדעי המחשב',
+  Engineering: 'הנדסת תוכנה',
+  Math: 'מתמטיקה',
+  Other: 'אחר',
+};
+
+// כל הבקשות לשרת בדף המנהל נשלחות עם הטוקן של המשתמש המחובר
+const authHeaders = () => ({
+  Authorization: `Bearer ${localStorage.getItem('scholarshipAppToken')}`,
+});
+
 export default function AdminRequestDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -10,10 +22,11 @@ export default function AdminRequestDetails() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch(`/api/requests/${id}`)
-      .then(res => {
-        if (!res.ok) throw new Error('שגיאה בטעינת הבקשה');
-        return res.json();
+    fetch(`/api/requests/${id}`, { headers: authHeaders() })
+      .then(async res => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || data.error || 'שגיאה בטעינת הבקשה');
+        return data;
       })
       .then(data => { setRequest(data); setLoading(false); })
       .catch(err => { setError(err.message); setLoading(false); });
@@ -32,11 +45,16 @@ export default function AdminRequestDetails() {
       cancelButtonText: 'ביטול',
     });
     if (!confirm.isConfirmed) return;
-    await fetch(`/api/requests/${id}/status`, {
+    const res = await fetch(`/api/requests/${id}/status`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ status }),
     });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      await Swal.fire({ title: 'העדכון נכשל', text: data.message || data.error || '', icon: 'error', confirmButtonColor: '#0c1e36' });
+      return;
+    }
     await Swal.fire({
       title: isApproved ? 'הבקשה אושרה!' : 'הבקשה נדחתה',
       icon: isApproved ? 'success' : 'error',
@@ -103,7 +121,7 @@ export default function AdminRequestDetails() {
         <div className="bg-white border border-[#0c1e36]/10 rounded-[20px] shadow-sm p-8 mb-5">
           <div className="text-[14px] font-semibold text-[#0c1e36]/50 uppercase tracking-[0.5px] mb-5 pb-3 border-b border-[#0c1e36]/10">פרטי לימודים</div>
           <div className="grid grid-cols-2 gap-5">
-            <Field label="מגמה" value={request.education?.field} />
+            <Field label="מגמה" value={FIELD_LABELS[request.education?.field] || request.education?.field} />
             <Field label="מוסד לימודים" value={request.education?.institution} />
             <Field label="מספר שנות לימוד" value={request.education?.years} />
             <Field label="שכר לימוד שנתי" value={request.education?.tuition ? `₪${request.education.tuition.toLocaleString()}` : '-'} />

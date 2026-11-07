@@ -51,7 +51,8 @@ export default function Login({ auth }) {
           timer: 2000,
           showConfirmButton: false
         });
-        navigate("/dashboard");
+        // מנהל מגיע ישר לדף ניהול הבקשות, סטודנט לדשבורד
+        navigate(data.user.role === "admin" ? "/admin-requests" : "/dashboard");
       } else {
         Swal.fire({
           icon: 'error',
