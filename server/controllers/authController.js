@@ -54,7 +54,7 @@ const login = async (req, res) => {
 
     // 3. יצירת JWT
     const token = jwt.sign(
-      { id: user._id },
+      { id: user._id, role: user.role },
       process.env.JWT_SECRET || "secretkey",
       { expiresIn: "1h" }
     );
@@ -68,6 +68,7 @@ const login = async (req, res) => {
         firstName: user.firstName,
         lastName:  user.lastName,
         email:     user.email,
+        role:      user.role || "user",
       },
     });
   } catch (error) {
