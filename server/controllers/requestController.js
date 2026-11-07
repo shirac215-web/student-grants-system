@@ -1,4 +1,5 @@
 const requestModel = require('../models/requestModel');
+const User = require('../models/user');
 const mongoose = require('mongoose');
 
 // ─── CREATE ───────────────────────────────────────────────────────────────────
@@ -96,4 +97,38 @@ const getRequestStatus = async (req, res) => {
   }
 };
 
-module.exports = { create, read, readOne, update, updateStatus, updateEducation, remove, getRequestStatus };
+// ─── SUBMIT (logged-in student submits the full 6-step form) ────────────────
+// userId comes from the JWT (auth middleware), never from the request body,
+// so a student can only submit a request for themselves.
+const submitRequest = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const { personal, family, education, bank, files } = req.body;
+
+    const request = await requestModel.create({
+      userId: user._id,
+      userSnapshot: {
+        nationalId: user.idNumber,
+        firstName: user.firstName,
+        lastName: user.lastName,
+      },
+      status: 'pending',
+      personal,
+      family,
+      education,
+      bank,
+      files,
+    });
+
+    res.status(201).json({ message: 'Request submitted successfully', requestId: request._id });
+  } catch (error) {
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ message: 'חסרים פרטים בטופס', details: error.message });
+    }
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { create, read, readOne, update, updateStatus, updateEducation, remove, getRequestStatus, submitRequest };
