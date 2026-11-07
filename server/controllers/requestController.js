@@ -12,7 +12,7 @@ const create = (req, res) => {
 
 // ─── READ ALL ─────────────────────────────────────────────────────────────────
 const read = (req, res) => {
-  requestModel.find()
+  requestModel.find().sort({ createdAt: -1 }) // newest first
     .then(requests => res.status(200).send(requests))
     .catch(error => res.status(500).send({ error: error.message }));
 };
