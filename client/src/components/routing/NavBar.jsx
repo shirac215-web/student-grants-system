@@ -43,6 +43,7 @@ export default function Navbar({ auth }) {
           >
             דף הבית
           </NavLink>
+          {!isAuthenticated && (
           <NavLink
             to="/register"
             className={({ isActive }) =>
@@ -53,6 +54,7 @@ export default function Navbar({ auth }) {
           >
             הרשמה
           </NavLink>
+          )}
           {isAdmin && (
             <NavLink
               to="/admin-requests"
