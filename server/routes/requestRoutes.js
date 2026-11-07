@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { create, read, readOne, update, updateStatus, updateEducation, remove, getRequestStatus } = require('../controllers/requestController');
+const { create, read, readOne, update, updateStatus, updateEducation, remove, getRequestStatus, submitRequest } = require('../controllers/requestController');
+const auth = require('../middleware/auth');
 
+router.post('/submit', auth, submitRequest);
 router.post('/', create);
 router.get('/', read);
 router.get('/:id', readOne);
