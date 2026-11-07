@@ -5,6 +5,7 @@ export default function Navbar({ auth }) {
   const navigate = useNavigate();
   const isLanding = location.pathname === '/';
   const isAuthenticated = Boolean(auth?.user);
+  const isAdmin = auth?.user?.role === 'admin';
 
   const handleLogout = () => {
     auth?.logout?.();
@@ -52,6 +53,18 @@ export default function Navbar({ auth }) {
           >
             הרשמה
           </NavLink>
+          {isAdmin && (
+            <NavLink
+              to="/admin-requests"
+              className={({ isActive }) =>
+                `transition px-5 py-2 rounded-full font-medium ${
+                  isActive ? 'bg-[#1f4ea8]/20 text-[#E5DED0]' : 'text-[#cbd5ea] hover:text-white'
+                }`
+              }
+            >
+              ניהול בקשות
+            </NavLink>
+          )}
         </div>
       )}
 
