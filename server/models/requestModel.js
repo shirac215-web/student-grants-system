@@ -68,11 +68,7 @@ const requestSchema = new mongoose.Schema({
   },
 
   bank: {
-    bankName: {
-      type: String,
-      enum: ["Hapoalim", "Leumi", "Discount", "Mizrahi", "Other"],
-      required: true
-    },
+    bankName:      { type: String, required: true },
     branch:        { type: String, required: true },
     accountNumber: { type: String, required: true },
     ownerId:       { type: String, required: true }
