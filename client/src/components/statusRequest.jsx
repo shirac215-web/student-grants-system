@@ -4,6 +4,14 @@ import { useState, useEffect } from "react";
 
 // 👑 מחקנו מכאן את ה-getItem הישנים שגרמו ל-undefined!
 
+// תרגום ערכי המגמה מהמסד לתצוגה בעברית
+const FIELD_LABELS = {
+  "Computer Science": "מדעי המחשב",
+  Engineering: "הנדסת תוכנה",
+  Math: "מתמטיקה",
+  Other: "אחר",
+};
+
 export default function ScholarshipStatus() {
   const [requestData, setRequestData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -244,7 +252,7 @@ useEffect(() => {
                 מגמה / תחום לימוד
               </div>
               <div className="display-font" style={{ fontWeight: 700, fontSize: 18, color: "#0A192F" }}>
-                {requestData?.education?.field || "לא צוין"}
+                {FIELD_LABELS[requestData?.education?.field] || requestData?.education?.field || "לא צוין"}
               </div>
             </div>
           </div>
