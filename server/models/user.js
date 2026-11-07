@@ -8,6 +8,9 @@ const UserSchema = new mongoose.Schema({
   idNumber:  { type: String, required: true, unique: true, trim: true },
   email:     { type: String, required: true, unique: true, trim: true, lowercase: true },
   password:  { type: String, required: true },
+  // תפקיד במערכת: סטודנט רגיל או מנהל. לא ניתן לבחור תפקיד בהרשמה,
+  // מנהל מוגדר ידנית במסד הנתונים
+  role:      { type: String, enum: ["user", "admin"], default: "user" },
   createdAt: { type: Date, default: Date.now },
 });
 
